@@ -41,7 +41,5 @@ app.get('/api/mongo/:item', async (req, res) => {
     await client.close();
   }
 });
-}
-run().catch(console.dir);
-});
+
 
