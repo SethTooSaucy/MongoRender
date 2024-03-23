@@ -3,7 +3,6 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const uri = "mongodb+srv://lillaundry:Antib7iotics!@sethcluster.lbpora8.mongodb.net/?retryWrites=true&w=majority&appName=SethCluster";
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 
 app.listen(port, () => {
@@ -12,18 +11,18 @@ app.listen(port, () => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 // Default endpoint
 app.get('/', (req, res) => {
-  if (req.cookies.authToken) {
-      res.send(`You are authenticated with token: ${req.cookies.authToken}`);
+  if (req.headers.cookie) {
+    const authToken = req.headers.cookie.split('=')[1];
+    res.send(`You are authenticated with token: ${authToken}`);
   } else {
-      res.send(`
-          <h2>Welcome to our site!</h2>
-          <button onclick="window.location.href='/register'">Register</button>
-          <button onclick="window.location.href='/login'">Login</button>
-      `);
+    res.send(`
+        <h2>Welcome to our site!</h2>
+        <button onclick="window.location.href='/register'">Register</button>
+        <button onclick="window.location.href='/login'">Login</button>
+    `);
   }
 });
 
@@ -52,13 +51,21 @@ app.get('/login', (req, res) => {
 
 // Print all cookies endpoint
 app.get('/cookies', (req, res) => {
-    res.send(`Active Cookies: ${JSON.stringify(req.cookies)}<br><a href="/clear-cookie">Clear Cookie</a>`);
+  if (req.headers.cookie) {
+    res.send(`Active Cookies: ${JSON.stringify(req.headers.cookie)}<br><a href="/clear-cookie">Clear Cookie</a>`);
+  } else {
+    res.send('No active cookies found!');
+  }
 });
 
 // Clear cookie endpoint
 app.get('/clear-cookie', (req, res) => {
+  if (req.headers.cookie) {
     res.clearCookie('authToken');
     res.send('Cookie cleared successfully!<br><a href="/">Return to home</a>');
+  } else {
+    res.send('No active cookies found!');
+  }
 });
 
 app.post('/register', async (req, res) => {
@@ -121,6 +128,9 @@ app.post('/login', async (req, res) => {
     // Close MongoDB connection
     await client.close();
 
+    // Set cookie manually
+    res.setHeader('Set-Cookie', `authToken=${user_ID}; HttpOnly`);
+    
     // Respond with success message and redirect to homepage
     res.status(200).json({ Congrats: 'Login successful' });
     res.redirect('/');
@@ -129,3 +139,4 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
