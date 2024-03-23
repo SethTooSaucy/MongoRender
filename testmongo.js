@@ -3,7 +3,8 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const uri = "mongodb+srv://lillaundry:Antib7iotics!@sethcluster.lbpora8.mongodb.net/?retryWrites=true&w=majority&appName=SethCluster";
-const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto'); // Import the crypto module
 
 app.listen(port, () => {
   console.log(`Server started at http://localhost:${port}`);
@@ -11,12 +12,12 @@ app.listen(port, () => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Default endpoint
 app.get('/', (req, res) => {
-  if (req.headers.cookie) {
-    const authToken = req.headers.cookie.split('=')[1];
-    res.send(`You are authenticated with token: ${authToken}`);
+  if (req.cookies.authToken) {
+    res.send(`You are authenticated with token: ${req.cookies.authToken}`);
   } else {
     res.send(`
         <h2>Welcome to our site!</h2>
@@ -51,21 +52,13 @@ app.get('/login', (req, res) => {
 
 // Print all cookies endpoint
 app.get('/cookies', (req, res) => {
-  if (req.headers.cookie) {
-    res.send(`Active Cookies: ${JSON.stringify(req.headers.cookie)}<br><a href="/clear-cookie">Clear Cookie</a>`);
-  } else {
-    res.send('No active cookies found!');
-  }
+    res.send(`Active Cookies: ${JSON.stringify(req.cookies)}<br><a href="/clear-cookie">Clear Cookie</a>`);
 });
 
 // Clear cookie endpoint
 app.get('/clear-cookie', (req, res) => {
-  if (req.headers.cookie) {
     res.clearCookie('authToken');
     res.send('Cookie cleared successfully!<br><a href="/">Return to home</a>');
-  } else {
-    res.send('No active cookies found!');
-  }
 });
 
 app.post('/register', async (req, res) => {
@@ -73,8 +66,8 @@ app.post('/register', async (req, res) => {
     // Extract user details from request body
     const { user_ID, password } = req.body;
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash the password using crypto module
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
     // Connect to MongoDB
     const client = new MongoClient(uri);
@@ -118,9 +111,9 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check if the password is correct
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
+    // Hash the provided password and compare with the stored hashed password
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    if (hashedPassword !== user.password) {
       // Incorrect password
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -128,8 +121,8 @@ app.post('/login', async (req, res) => {
     // Close MongoDB connection
     await client.close();
 
-    // Set cookie manually
-    res.setHeader('Set-Cookie', `authToken=${user_ID}; HttpOnly`);
+    // Set cookie
+    res.cookie('authToken', user_ID, { httpOnly: true });
     
     // Respond with success message and redirect to homepage
     res.status(200).json({ Congrats: 'Login successful' });
@@ -139,4 +132,5 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
