@@ -7,6 +7,8 @@ const port = 3000;
 
 // Import routes
 const authRoutes = require('./routes/authRoutes.js');
+const topicsRoutes = require('./routes/topicsRoutes.js');
+const messagesRoutes = require('./routes/messagesRoutes.js'); // Import messagesRoutes
 
 // MongoDB URI
 const uri = "mongodb+srv://lillaundry:Antib7iotics!@sethcluster.lbpora8.mongodb.net/?retryWrites=true&w=majority&appName=SethCluster";
@@ -46,13 +48,15 @@ app.use((req, res, next) => {
 
 // Use authentication routes
 app.use(authRoutes);
+app.use(topicsRoutes);
+app.use(messagesRoutes); // Use messagesRoutes
 
 // Default endpoint
 app.get('/', (req, res) => {
     const authToken = req.cookies.authToken;
     const content = `
-        <h2>Welcome to our site!</h2>
         You are authenticated as: ${authToken || 'Guest'} <br> 
+        <button onclick="window.location.href='/topics'">View Topics</button>
         <button onclick="window.location.href='/register'">Register</button>
         <button onclick="window.location.href='/login'">Login</button>
     `;
@@ -68,5 +72,3 @@ async function startServer() {
 }
 
 startServer();
-
-
