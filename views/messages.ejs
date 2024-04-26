@@ -1,0 +1,19 @@
+<!-- messages.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+</head>
+<body>
+    <h1>Messages</h1>
+
+    <% messages.forEach(message => { %>
+        <div>
+            <p><%= message.text %></p>
+            <p>Topic: <%= message.topic %></p>
+        </div>
+    <% }); %>
+</body>
+</html>
