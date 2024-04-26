@@ -1,0 +1,28 @@
+<!-- topics.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topics</title>
+</head>
+<body>
+    <h1>Topics</h1>
+
+    <% topics.forEach(topic => { %>
+        <h2><%= topic.name %></h2>
+        <!-- Display messages for each topic -->
+        <ul>
+            <% topic.messages.forEach(message => { %>
+                <li><%= message.text %></li>
+            <% }); %>
+        </ul>
+        <!-- Form to create a new message for the topic -->
+        <form method="post" action="/messages/<%= topic._id %>">
+            <input type="text" name="message" placeholder="Enter your message">
+            <button type="submit">Post Message</button>
+        </form>
+    <% }); %>
+</body>
+</html>
