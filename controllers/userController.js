@@ -1,6 +1,6 @@
 // Import necessary modules and models
-const User = require('../models/User');
-const Topic = require('../models/Topic');
+const User = require('../models/user');
+const Topic = require('../models/topic');
 
 // UserController object
 const UserController = {
