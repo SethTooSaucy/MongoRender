@@ -3,8 +3,7 @@ const { Schema, model } = require('mongoose');
 
 const topicSchema = new Schema({
     name: { type: String, required: true, unique: true },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    messages: [{ type: String, required: true }] // Define messages as an array of strings
 });
 
 const Topic = model('Topic', topicSchema);

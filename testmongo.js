@@ -3,6 +3,7 @@
 const express = require('express');
 const { MongoClient } = require("mongodb");
 const app = express();
+const path = require('path'); // Add this line
 const port = 3000;
 
 // Import routes
@@ -49,7 +50,7 @@ app.use((req, res, next) => {
 // Use authentication routes
 app.use(authRoutes);
 app.use(topicsRoutes);
-app.use(messagesRoutes); // Use messagesRoutes
+app.set('view engine', 'ejs');
 
 // Default endpoint
 app.get('/', (req, res) => {
