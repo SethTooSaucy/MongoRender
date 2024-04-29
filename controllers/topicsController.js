@@ -12,11 +12,11 @@ async function getAllTopicsWithMessages() {
 
         // Find all topics
         const allTopics = await topics.find({}).toArray();
-        await client.close();
 
         // Fetch messages for each topic
         const topicsWithMessages = await Promise.all(allTopics.map(async topic => {
-            topic.messages = await messagesController.getMessagesByTopicId(topic._id);
+            const messages = await getMessagesByTopicName(topic.name); // Corrected here
+            topic.messages = messages;
             return topic;
         }));
 
@@ -27,20 +27,43 @@ async function getAllTopicsWithMessages() {
     }
 }
 
-// Function to create a new topic
+async function getMessagesByTopicName(topicName) {
+    try {
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('Sethdb');
+        const messages = db.collection('messages');
+
+        // Find messages for the given topic name
+        const topicMessages = await messages.find({ topic: topicName }).toArray();
+        return topicMessages;
+    } catch (error) {
+        console.error(`Error fetching messages for topic ${topicName}:`, error);
+        throw new Error('Internal Server Error');
+    }
+}
+
 async function createTopic(req, res) {
     try {
         // Extract topic details from request body
-        const { name } = req.body;
+        const { name, message } = req.body;
 
         // Connect to MongoDB
         const client = new MongoClient(uri);
         await client.connect();
-        const db = client.db('Sethdb'); // Change to your database name
-        const topics = db.collection('topics'); // Create a collection named 'topics'
+        const db = client.db('Sethdb');
+        const topics = db.collection('topics');
 
-        // Insert the new topic into the database
-        await topics.insertOne({ name, messages: [] });
+        // Check if topic with the given name already exists
+        const existingTopic = await topics.findOne({ name });
+
+        if (existingTopic) {
+            // Update existing topic by adding the new message
+            await topics.updateOne({ name }, { $push: { messages: message } });
+        } else {
+            // Create a new topic with the message
+            await topics.insertOne({ name, messages: [message] });
+        }
 
         await client.close();
 
@@ -50,6 +73,13 @@ async function createTopic(req, res) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+
+module.exports = {
+    getAllTopicsWithMessages,
+    createTopic
+};
+
 
 module.exports = {
     getAllTopicsWithMessages,
