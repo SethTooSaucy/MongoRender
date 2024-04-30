@@ -9,7 +9,6 @@ const port = 3000;
 // Import routes
 const authRoutes = require('./routes/authRoutes.js');
 const topicsRoutes = require('./routes/topicsRoutes.js');
-const messagesRoutes = require('./routes/messagesRoutes.js'); // Import messagesRoutes
 
 // MongoDB URI
 const uri = "mongodb+srv://lillaundry:Antib7iotics!@sethcluster.lbpora8.mongodb.net/?retryWrites=true&w=majority&appName=SethCluster";
@@ -73,3 +72,4 @@ async function startServer() {
 }
 
 startServer();
+
