@@ -10,13 +10,14 @@ async function getAllTopicsWithMessages() {
 
         // Find all topics
         const allTopics = await topics.find({}).toArray();
-        await client.close();
 
         // Fetch messages for each topic
         const topicsWithMessages = await Promise.all(allTopics.map(async topic => {
-            topic.messages = await messagesController.getMessagesByTopicId(topic._id);
+            topic.messages = await getMessagesByTopicName(topic.name); // Corrected here
             return topic;
         }));
+
+        await client.close(); // Close the client connection
 
         return topicsWithMessages;
     } catch (error) {
@@ -25,20 +26,46 @@ async function getAllTopicsWithMessages() {
     }
 }
 
-// Function to create a new topic
+async function getMessagesByTopicName(topicName) {
+    try {
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('Sethdb');
+        const topics = db.collection('topics');
+
+        // Find messages for the given topic name
+        const topic = await topics.findOne({ name: topicName });
+
+        await client.close(); // Close the client connection
+
+        return topic ? topic.messages : [];
+    } catch (error) {
+        console.error(`Error fetching messages for topic ${topicName}:`, error);
+        throw new Error('Internal Server Error');
+    }
+}
+
 async function createTopic(req, res) {
     try {
         // Extract topic details from request body
-        const { name } = req.body;
+        const { name, message } = req.body;
 
         // Connect to MongoDB
         const client = new MongoClient(uri);
         await client.connect();
-        const db = client.db('Sethdb'); // Change to your database name
-        const topics = db.collection('topics'); // Create a collection named 'topics'
+        const db = client.db('Sethdb');
+        const topics = db.collection('topics');
 
-        // Insert the new topic into the database
-        await topics.insertOne({ name, messages: [], subscribers: [] });
+        // Check if topic with the given name already exists
+        const existingTopic = await topics.findOne({ name });
+
+        if (existingTopic) {
+            // Update existing topic by adding the new message
+            await topics.updateOne({ name }, { $push: { messages: message } });
+        } else {
+            // Create a new topic with the message
+            await topics.insertOne({ name, messages: [message] });
+        }
 
         await client.close();
 
@@ -48,27 +75,82 @@ async function createTopic(req, res) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
-
-// Function to subscribe a user to a topic
-async function subscribeToTopic(topicId, userId) {
+async function subscribeToTopic(req, res) {
     try {
+        const { topicName } = req.body;
+        const user_ID = req.cookies.authToken; // Assuming user ID is available in cookies
+
+        // Connect to MongoDB
         const client = new MongoClient(uri);
         await client.connect();
         const db = client.db('Sethdb');
-        const topics = db.collection('topics');
+        const users = db.collection('users');
 
-        // Update the topic document to add the user to subscribers
-        await topics.updateOne(
-            { _id: ObjectId(topicId) },
-            { $addToSet: { subscribers: userId } } // Add user ID to subscribers array
-        );
+        // Find the user by ID
+        const user = await users.findOne({ user_ID });
 
-        await client.close();
+        if (!user) {
+            // User not found
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Add the topic name to the user's subscribed topics array
+        user.subscribedTopics.push(topicName);
+        
+        // Update the user document
+        await users.updateOne({ user_ID }, { $set: { subscribedTopics: user.subscribedTopics } });
+
+        await client.close(); // Close the client connection
+
+        res.redirect('/topics');
     } catch (error) {
         console.error('Error subscribing to topic:', error);
-        throw new Error('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+async function unsubscribeFromTopic(req, res) {
+    try {
+        const { topicName } = req.body;
+        const user_ID = req.cookies.authToken; // Assuming user ID is available in cookies
+
+        // Connect to MongoDB
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('Sethdb');
+        const users = db.collection('users');
+
+        // Find the user by ID
+        const user = await users.findOne({ user_ID });
+
+        if (!user) {
+            // User not found
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Remove the topic name from the user's subscribed topics array
+        user.subscribedTopics = user.subscribedTopics.filter(topic => topic !== topicName);
+        
+        // Update the user document
+        await users.updateOne({ user_ID }, { $set: { subscribedTopics: user.subscribedTopics } });
+
+        await client.close(); // Close the client connection
+
+        res.redirect('/topics');
+    } catch (error) {
+        console.error('Error unsubscribing from topic:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+
+
+module.exports = {
+    getAllTopicsWithMessages,
+    createTopic,
+    subscribeToTopic,
+    unsubscribeFromTopic,
+};
 
 module.exports = {
     getAllTopicsWithMessages,

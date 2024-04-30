@@ -1,28 +1,75 @@
-<!-- topics.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Topics</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS styles */
+        .topic {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Topics</h1>
+    <div class="container">
+        <h1 class="mt-5 mb-4">Topics</h1>
+        <% if (user) { %>
+            <p>Welcome, <%= user.user_ID %>!</p>
+        <% } %>
+        <div id="topics-container">
+            <% topics.forEach(topic => { %>
+                <div class="topic border p-3 rounded">
+                    <h2 class="mb-3"><%= topic.name %></h2>
+                    <ul class="list-group mb-3">
+                        <% topic.messages.forEach(message => { %>
+                            <li class="list-group-item"><%= message %></li>
+                        <% }) %>                    
+                    </ul>
+                    <form action="/topics" method="POST">
+                        <input type="hidden" name="topicName" value="<%= topic.name %>">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" name="message" placeholder="Enter your message">
+                            <button class="btn btn-primary" type="submit">Post Message</button>
+                        </div>
+                    </form>
+                    <% if (user && user.subscribedTopics.includes(topic.name)) { %>
+                        <form action="/topics" method="POST">
+                            <input type="hidden" name="action" value="unsubscribe">
+                            <input type="hidden" name="topicName" value="<%= topic.name %>">
+                            <button class="btn btn-danger" type="submit">Unsubscribe</button>
+                        </form>
+                    <% } else { %>
+                        <form action="/topics" method="POST">
+                            <input type="hidden" name="action" value="subscribe">
+                            <input type="hidden" name="topicName" value="<%= topic.name %>">
+                            <button class="btn btn-success" type="submit">Subscribe</button>
+                        </form>
+                    <% } %>
+                </div>
+            <% }) %>
+        </div>
+        <div class="mt-5">
+            <h2>Create a New Topic</h2>
+            <form action="/topics" method="POST">
+                <div class="mb-3">
+                    <label for="new-topic-name" class="form-label">Topic Name:</label>
+                    <input type="text" id="new-topic-name" class="form-control" name="name" placeholder="Enter topic name">
+                </div>
+                <div class="mb-3">
+                    <label for="new-topic-message" class="form-label">Message:</label>
+                    <input type="text" id="new-topic-message" class="form-control" name="message" placeholder="Enter your message">
+                </div>
+                <button type="submit" class="btn btn-primary">Create Topic</button>
+            </form>
+        </div>
+    </div>
 
-    <% topics.forEach(topic => { %>
-        <h2><%= topic.name %></h2>
-        <!-- Display messages for each topic -->
-        <ul>
-            <% topic.messages.forEach(message => { %>
-                <li><%= message.text %></li>
-            <% }); %>
-        </ul>
-        <!-- Form to create a new message for the topic -->
-        <form method="post" action="/messages/<%= topic._id %>">
-            <input type="text" name="message" placeholder="Enter your message">
-            <button type="submit">Post Message</button>
-        </form>
-    <% }); %>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+

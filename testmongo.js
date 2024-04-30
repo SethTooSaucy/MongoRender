@@ -3,12 +3,12 @@
 const express = require('express');
 const { MongoClient } = require("mongodb");
 const app = express();
+const path = require('path'); // Add this line
 const port = 3000;
 
 // Import routes
 const authRoutes = require('./routes/authRoutes.js');
 const topicsRoutes = require('./routes/topicsRoutes.js');
-const messagesRoutes = require('./routes/messagesRoutes.js'); // Import messagesRoutes
 
 // MongoDB URI
 const uri = "mongodb+srv://lillaundry:Antib7iotics!@sethcluster.lbpora8.mongodb.net/?retryWrites=true&w=majority&appName=SethCluster";
@@ -49,7 +49,7 @@ app.use((req, res, next) => {
 // Use authentication routes
 app.use(authRoutes);
 app.use(topicsRoutes);
-app.use(messagesRoutes); // Use messagesRoutes
+app.set('view engine', 'ejs');
 
 // Default endpoint
 app.get('/', (req, res) => {
@@ -72,3 +72,4 @@ async function startServer() {
 }
 
 startServer();
+
