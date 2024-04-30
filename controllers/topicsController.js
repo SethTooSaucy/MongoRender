@@ -46,11 +46,10 @@ async function getMessagesByTopicName(topicName) {
         throw new Error('Internal Server Error');
     }
 }
-
 async function createTopic(req, res) {
     try {
         // Extract topic details from request body
-        const { name, message } = req.body;
+        const { topicName, message } = req.body;
 
         // Connect to MongoDB
         const client = new MongoClient(uri);
@@ -58,25 +57,28 @@ async function createTopic(req, res) {
         const db = client.db('Sethdb');
         const topics = db.collection('topics');
 
-        // Check if topic with the given name already exists
-        const existingTopic = await topics.findOne({ name });
+        // Find the topic by name
+        const topic = await topics.findOne({ name: topicName });
 
-        if (existingTopic) {
-            // Update existing topic by adding the new message
-            await topics.updateOne({ name }, { $push: { messages: message } });
-        } else {
-            // Create a new topic with the message
-            await topics.insertOne({ name, messages: [message] });
+        if (!topic) {
+            // If topic not found, return error
+            return res.status(404).json({ error: 'Topic not found' });
         }
+
+        // Add the new message to the topic
+        await topics.updateOne({ name: topicName }, { $push: { messages: message } });
 
         await client.close();
 
+        // Redirect back to the topics page
         res.redirect('/topics');
     } catch (error) {
-        console.error('Error creating topic:', error);
+        console.error('Error creating message:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+
 async function subscribeToTopic(req, res) {
     try {
         const { topicName } = req.body;
@@ -154,7 +156,4 @@ module.exports = {
     unsubscribeFromTopic,
 };
 
-module.exports = {
-    getAllTopicsWithMessages,
-    createTopic
-};
+
