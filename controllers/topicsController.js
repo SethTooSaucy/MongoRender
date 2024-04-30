@@ -78,27 +78,32 @@ async function createTopic(req, res) {
 async function subscribeToTopic(req, res) {
     try {
         const { topicName } = req.body;
-        const user_ID = req.cookies.authToken; // Assuming user ID is available in cookies
+        const userId = req.cookies.authToken; // Assuming user ID is available in cookies
 
         // Connect to MongoDB
         const client = new MongoClient(uri);
         await client.connect();
         const db = client.db('Sethdb');
-        const users = db.collection('users');
+        const topics = db.collection('topics');
 
-        // Find the user by ID
-        const user = await users.findOne({ user_ID });
+        // Find the topic by name
+        const topic = await topics.findOne({ name: topicName });
 
-        if (!user) {
-            // User not found
-            return res.status(404).json({ error: 'User not found' });
+        if (!topic) {
+            // Topic not found
+            return res.status(404).json({ error: 'Topic not found' });
         }
 
-        // Add the topic name to the user's subscribed topics array
-        user.subscribedTopics.push(topicName);
-        
-        // Update the user document
-        await users.updateOne({ user_ID }, { $set: { subscribedTopics: user.subscribedTopics } });
+        // Check if the user is already subscribed to the topic
+        if (topic.subscribers.includes(userId)) {
+            return res.status(400).json({ error: 'User is already subscribed to this topic' });
+        }
+
+        // Add the user to the list of subscribers for the topic
+        await topics.updateOne(
+            { name: topicName },
+            { $push: { subscribers: userId } }
+        );
 
         await client.close(); // Close the client connection
 
