@@ -16,9 +16,7 @@
 <body>
     <div class="container">
         <h1 class="mt-5 mb-4">Topics</h1>
-        <% if (user) { %>
-            <p>Welcome, <%= user.user_ID %>!</p>
-        <% } %>
+
         <div id="topics-container">
             <% topics.forEach(topic => { %>
                 <div class="topic border p-3 rounded">
@@ -28,26 +26,15 @@
                             <li class="list-group-item"><%= message %></li>
                         <% }) %>                    
                     </ul>
-                    <form action="/topics" method="POST">
-                        <input type="hidden" name="topicName" value="<%= topic.name %>">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" name="message" placeholder="Enter your message">
-                            <button class="btn btn-primary" type="submit">Post Message</button>
-                        </div>
-                    </form>
-                    <% if (user && user.subscribedTopics.includes(topic.name)) { %>
-                        <form action="/topics" method="POST">
-                            <input type="hidden" name="action" value="unsubscribe">
-                            <input type="hidden" name="topicName" value="<%= topic.name %>">
-                            <button class="btn btn-danger" type="submit">Unsubscribe</button>
-                        </form>
-                    <% } else { %>
-                        <form action="/topics" method="POST">
-                            <input type="hidden" name="action" value="subscribe">
-                            <input type="hidden" name="topicName" value="<%= topic.name %>">
-                            <button class="btn btn-success" type="submit">Subscribe</button>
-                        </form>
-                    <% } %>
+                    <!-- Updated form to include topic name -->
+<form action="/topics" method="POST">
+    <input type="hidden" name="topicName" value="<%= topic.name %>"> <!-- Assuming topic.name is the unique identifier for each topic -->
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" name="message" placeholder="Enter your message">
+        <button class="btn btn-primary" type="submit">Post Message</button>
+    </div>
+</form>
+
                 </div>
             <% }) %>
         </div>
@@ -71,5 +58,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
 
