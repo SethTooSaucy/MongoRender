@@ -1,12 +1,13 @@
-// user.js
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+// models/User.js
+
+const { Schema, model } = require('mongoose');
 
 const userSchema = new Schema({
-    user_ID: String,
-    password: String,
-    subscribedTopics: [String]
+    user_ID: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    subscribedTopics: [{ type: Schema.Types.ObjectId, ref: 'Topic' }] // Array of subscribed topics
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = model('User', userSchema);
 
+module.exports = User;
